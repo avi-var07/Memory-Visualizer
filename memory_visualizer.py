@@ -62,3 +62,56 @@ if __name__ == "__main__":
     sim.allocate_process("P2", 12, "FIFO", 2)  # Needs 3 pages
     state, faults = sim.get_state()
     print(f"Memory: {state}, Page Faults: {faults}")
+
+# memory_visualizer.py (updated)
+class MemoryVisualizerApp:
+    def __init__(self, root):
+        self.root = root
+        self.sim = None
+
+        # Input Frame
+        input_frame = ttk.Frame(root, padding="10")
+        input_frame.grid(row=0, column=0, sticky="ew")
+
+        ttk.Label(input_frame, text="Total Memory (KB):").grid(row=0, column=0)
+        self.mem_entry = ttk.Entry(input_frame)
+        self.mem_entry.grid(row=0, column=1)
+        self.mem_entry.insert(0, "32")
+
+        ttk.Label(input_frame, text="Page Size (KB):").grid(row=1, column=0)
+        self.page_entry = ttk.Entry(input_frame)
+        self.page_entry.grid(row=1, column=1)
+        self.page_entry.insert(0, "4")
+
+        ttk.Label(input_frame, text="Process Size (KB):").grid(row=2, column=0)
+        self.proc_entry = ttk.Entry(input_frame)
+        self.proc_entry.grid(row=2, column=1)
+
+        ttk.Label(input_frame, text="Algorithm:").grid(row=3, column=0)
+        self.algo_var = tk.StringVar(value="FIFO")
+        algo_menu = ttk.OptionMenu(input_frame, self.algo_var, "FIFO", "FIFO", "LRU")
+        algo_menu.grid(row=3, column=1)
+
+        ttk.Button(input_frame, text="Add Process", command=self.add_process).grid(row=4, column=0, columnspan=2)
+        ttk.Button(input_frame, text="Simulate", command=self.run_simulation).grid(row=5, column=0, columnspan=2)
+
+        # Output Frame (placeholder)
+        self.output_label = ttk.Label(root, text="Simulation Results Here")
+        self.output_label.grid(row=1, column=0, pady=10)
+
+    def add_process(self):
+        if not self.sim:
+            self.sim = MemorySimulator(int(self.mem_entry.get()), int(self.page_entry.get()))
+        proc_size = int(self.proc_entry.get())
+        algorithm = self.algo_var.get()
+        self.sim.allocate_process(f"P{len(self.sim.fifo_queue) + 1}", proc_size, algorithm, len(self.sim.fifo_queue))
+        self.output_label.config(text="Process Added")
+
+    def run_simulation(self):
+        if self.sim:
+            state, faults = self.sim.get_state()
+            self.output_label.config(text=f"Memory: {state}\nPage Faults: {faults}")
+
+root = tk.Tk()
+app = MemoryVisualizerApp(root)
+root.mainloop()
