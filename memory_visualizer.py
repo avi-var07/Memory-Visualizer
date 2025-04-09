@@ -110,7 +110,25 @@ class MemoryVisualizerApp:
     def run_simulation(self):
         if self.sim:
             state, faults = self.sim.get_state()
-            self.output_label.config(text=f"Memory: {state}\nPage Faults: {faults}")
+            self.output_label.config(text=f"Page Faults: {faults}")
+            self.plot_memory(state)
+    def plot_memory(self, memory_state):
+        fig, ax = plt.subplots(figsize=(6, 2))
+        ax.set_title("Memory Map")
+        ax.set_xlabel("Page Number")
+        ax.set_yticks([])
+
+        colors = ['gray' if p is None else 'green' for p in memory_state]
+        ax.bar(range(len(memory_state)), [1] * len(memory_state), color=colors, edgecolor='black')
+        ax.set_xticks(range(len(memory_state)))
+
+        # Embed in Tkinter
+        for widget in self.root.grid_slaves(row=2, column=0):
+            widget.destroy()
+        canvas = FigureCanvasTkAgg(fig, master=self.root)
+        canvas.draw()
+        canvas.get_tk_widget().grid(row=2, column=0, pady=10)
+        plt.close(fig)
 
 root = tk.Tk()
 app = MemoryVisualizerApp(root)
