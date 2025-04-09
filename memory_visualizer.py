@@ -21,6 +21,8 @@ class MemorySimulator:
         self.lru_tracker = {}  # For LRU: {page: last_used_time}
 
     def allocate_process(self, process_id, process_size, algorithm, time_step):
+        if process_size <= 0 or process_size > self.total_memory:
+            raise ValueError("Invalid process size")
         pages_needed = (process_size + self.page_size - 1) // self.page_size
         free_pages = self.memory.count(None)
 
@@ -100,12 +102,15 @@ class MemoryVisualizerApp:
         self.output_label.grid(row=1, column=0, pady=10)
 
     def add_process(self):
-        if not self.sim:
-            self.sim = MemorySimulator(int(self.mem_entry.get()), int(self.page_entry.get()))
-        proc_size = int(self.proc_entry.get())
-        algorithm = self.algo_var.get()
-        self.sim.allocate_process(f"P{len(self.sim.fifo_queue) + 1}", proc_size, algorithm, len(self.sim.fifo_queue))
-        self.output_label.config(text="Process Added")
+        try:
+            if not self.sim:
+                self.sim = MemorySimulator(int(self.mem_entry.get()), int(self.page_entry.get()))
+            proc_size = int(self.proc_entry.get())
+            algorithm = self.algo_var.get()
+            self.sim.allocate_process(f"P{len(self.sim.fifo_queue) + 1}", proc_size, algorithm, len(self.sim.fifo_queue))
+            self.output_label.config(text="Process Added")
+        except ValueError as e:
+            self.output_label.config(text=f"Error: {e}")
 
     def run_simulation(self):
         if self.sim:
@@ -133,3 +138,9 @@ class MemoryVisualizerApp:
 root = tk.Tk()
 app = MemoryVisualizerApp(root)
 root.mainloop()
+if __name__ == "__main__":
+    sim = MemorySimulator(32, 4)
+    sim.allocate_process("P1", 10, "FIFO", 1)
+    sim.allocate_process("P2", 12, "LRU", 2)
+    state, faults = sim.get_state()
+    print(f"Test Result - Memory: {state}, Faults: {faults}")
