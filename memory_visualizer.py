@@ -41,7 +41,10 @@ def simulate_paging(processes, page_size, total_memory, replacement_algo):
                 page_queue.append(replaced_frame)
                 page_access[replaced_frame] = current_time
 
-    return memory, page_table, page_faults, timeline
+    # Convert page_table to a DataFrame-friendly format
+    max_pages = max(len(frames) for frames in page_table.values()) if page_table else 0
+    df_data = {pid: frames + [None] * (max_pages - len(frames)) for pid, frames in page_table.items()}
+    return memory, df_data, page_faults, timeline
 
 # Function to simulate Segmentation
 def simulate_segmentation(processes, total_memory):
@@ -106,15 +109,15 @@ st.write("Simulate and visualize memory management techniques (Paging, Segmentat
 technique = st.selectbox("Select Memory Management Technique", ["Paging", "Segmentation", "Virtual Memory"])
 total_memory = st.number_input("Total Memory Size (KB)", min_value=100, value=1024, step=100)
 if technique == "Paging":
-    page_size = st.number_input("Page Size (KB)", min_value=1, value=4, step=1)
+    page_size = st.number_input("Page Size (KB)", min_value=1, value=3, step=1)
     replacement_algo = st.selectbox("Replacement Algorithm", ["FIFO", "LRU"])
 
 # Process Inputs
-num_processes = st.number_input("Number of Processes", min_value=1, max_value=10, value=3, step=1)
+num_processes = st.number_input("Number of Processes", min_value=1, max_value=10, value=10, step=1)
 processes = {}
 for i in range(num_processes):
     pid = st.text_input(f"Process {i+1} ID", f"P{i+1}")
-    size = st.number_input(f"Memory Size for {pid} (KB)", min_value=1, value=10, step=1)
+    size = st.number_input(f"Memory Size for {pid} (KB)", min_value=1, value=2 if i < 5 else 3 if i < 7 else 4 if i < 8 else 5, step=1)
     processes[pid] = size
 
 # Simulation Button
@@ -124,8 +127,7 @@ if st.button("Simulate Memory Management"):
         st.subheader("📊 Memory State")
         st.write(pd.DataFrame({"Frame": range(len(memory)), "Process": memory}))
         st.subheader("📋 Page Table")
-        st.write("DEBUG:", page_table)
-        st.write(pd.DataFrame(page_table))
+        st.write(pd.DataFrame(page_table))  # Now works with padded data
         st.write(f"**🔹 Number of Page Faults:** {page_faults}")
         open_canvas_panel(timeline, memory, page_table, page_faults)
     elif technique == "Segmentation":
@@ -133,7 +135,7 @@ if st.button("Simulate Memory Management"):
         st.subheader("📊 Memory State")
         st.write(pd.DataFrame({"Address": range(len(memory)), "Process": memory}))
         st.subheader("📋 Segment Table")
-        st.write(pd.DataFrame(segment_table))
+        st.write(pd.DataFrame(segment_table.items(), columns=["Process", "Segment"]))
     else:  # Virtual Memory (simplified as paging with demand paging)
         memory, page_table, page_faults, timeline = simulate_paging(processes, page_size, total_memory, replacement_algo)
         st.subheader("📊 Memory State")
