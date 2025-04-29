@@ -8,6 +8,19 @@ A comprehensive educational tool for visualizing and understanding memory manage
 
 ## 📸 Project Screenshots
 
+<details>
+<summary>See Images</summary>
+
+![Screenshot 1](https://github.com/user-attachments/assets/798c93b7-a15a-4e81-9318-dc83369a73ab)
+![Screenshot 2 - Paging](https://github.com/user-attachments/assets/0c5d8e9b-6b1e-4e14-b5b3-5e6e9c7b8f0e)
+![Screenshot 3 - Virtual Memory](https://github.com/user-attachments/assets/3f8b7c2a-5f9f-4b2d-8e1d-8a8f6c9d0e1f)
+![Screenshot 4 - Segmentation Allocation](https://github.com/user-attachments/assets/6e2d9f3b-7c0f-4e24-9e2d-9b9f7d0e1f2g)
+![Screenshot 5 - Segmentation with Fragmentation](https://github.com/user-attachments/assets/9f3e0g4c-8d1g-4f34-ae3e-ac0g8e1f2g3h)
+![Screenshot 6 - Virtual Memory Allocation](https://github.com/user-attachments/assets/cg4h1i5d-9e2h-4g45-bf4f-bd1h9f2g3i4i)
+![Screenshot 7 - Paging Allocation](https://github.com/user-attachments/assets/i5j2k6e-fg3i-4h56-cg5g-ce2i0g3h4j5j)
+
+</details>
+
 
 
 ## 🔍 Overview
