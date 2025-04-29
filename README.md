@@ -1,4 +1,4 @@
-![image](https://github.com/user-attachments/assets/fdffef65-e3f5-441b-9ed6-9e9295fda694)# Dynamic Memory Management Simulator
+# Dynamic Memory Management Simulator
 
 ![MIT License](https://img.shields.io/badge/License-MIT-green.svg)
 ![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)
@@ -163,7 +163,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-![Screenshot 2025-04-29 235011](https://github.com/user-attachments/assets/798c93b7-a15a-4e81-9318-dc83369a73ab)
+
 
 
 Built with ❤️ for Operating Systems enthusiasts and students.
