@@ -31,12 +31,12 @@ class MemorySimulator:
         self.internal_fragmentation += (pages_needed * self.page_size) - process_size
         free_pages = self.memory.count(None)
         
-        if free_pages >= pages_needed:  #agar memory khali hai ya enough space hai to directly insert the page
-            self._allocate_free_pages(process_id, pages_needed, time_step) #actually puts the process into memory
-            return True #Allocation is successfull
-        else:   #enough space nahi hai
+        if free_pages >= pages_needed:
+            self._allocate_free_pages(process_id, pages_needed, time_step)
+            return True
+        else:
             self.page_faults += (pages_needed - free_pages)
-            self._allocate_free_pages(process_id, free_pages, time_step) #jitne jaa skte utne daalo
+            self._allocate_free_pages(process_id, free_pages, time_step)
             pages_to_replace = pages_needed - free_pages    
             for _ in range(pages_to_replace):
                 if not self._replace_page(algorithm, process_id, time_step):
@@ -46,21 +46,21 @@ class MemorySimulator:
     def _allocate_free_pages(self, process_id, num_pages, time_step):
         pages_allocated = 0
         for i in range(self.num_pages):
-            if self.memory[i] is None and pages_allocated < num_pages:  #memory mei None hai yaani empty hai aur pages to allocate less than free pages
-                self.memory[i] = process_id #assign the ith memory space to current process
+            if self.memory[i] is None and pages_allocated < num_pages:
+                self.memory[i] = process_id
                 self.fifo_queue.append(i)   
-                self.lru_tracker[i] = time_step #which page was used long ago
-                self.lfu_counter[i] = self.lfu_counter.get(i, 0)    #If this slot isn’t in the LFU counter yet, set its count to 0. LFU uses this to know how many times a page has been accessed.
+                self.lru_tracker[i] = time_step
+                self.lfu_counter[i] = self.lfu_counter.get(i, 0)
                 pages_allocated += 1
-        self.history.append(self.memory.copy()) #visualization k liye
+        self.history.append(self.memory.copy())
 
     def _replace_page(self, algorithm, process_id, time_step):
-        if algorithm == "FIFO" and self.fifo_queue: #algo is FIFO and fifo queue not empty
-            old_page = self.fifo_queue.popleft() #oldest page
-            self.memory[old_page] = process_id #oldest page ki index pr process id
-            self.fifo_queue.append(old_page) # Add this page back to the end of the queue (since it now contains a new process).
-            self.lru_tracker[old_page] = time_step #Update its last used time (needed even for LFU or future LRU).
-            self.lfu_counter[old_page] = 0  # Reset frequency count for the new page (for LFU use later).
+        if algorithm == "FIFO" and self.fifo_queue:
+            old_page = self.fifo_queue.popleft()
+            self.memory[old_page] = process_id
+            self.fifo_queue.append(old_page)
+            self.lru_tracker[old_page] = time_step
+            self.lfu_counter[old_page] = 0
             self.history.append(self.memory.copy())
             return True
         elif algorithm == "LRU" and self.lru_tracker:
@@ -297,14 +297,6 @@ class SegmentationSimulator:
         )
         return fig
 
-    def calculate_fragmentation(self):
-        if not self.free_blocks:
-            return 0
-        total_free = sum(size for _, size in self.free_blocks)
-        largest_free = max(size for _, size in self.free_blocks)
-        return (total_free - largest_free) / total_free * 100 if total_free > 0 else 0
-    # Add this method to the SegmentationSimulator class in memory_simulator.py
-
     def analyze_fragmentation(self):
         """Performs detailed fragmentation analysis"""
         # Calculate total memory
@@ -395,7 +387,6 @@ class SegmentationSimulator:
             return fig, fig2
         
         return fig, None
-# Add this class to memory_simulator.py
 
 class VirtualMemorySimulator:
     def __init__(self, physical_memory_size, virtual_memory_size, page_size):

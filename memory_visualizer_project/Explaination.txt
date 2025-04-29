@@ -1,0 +1,147 @@
+"""
+==================================================
+🧠 MEMORY MANAGEMENT SIMULATOR – FUNCTIONALITY DOC
+==================================================
+
+This simulator demonstrates three core memory management techniques used in modern operating systems:
+    1. Paging (Fixed-size memory allocation)
+    2. Segmentation (Variable-size memory allocation)
+    3. Virtual Memory (Demand paging and swapping)
+
+Implemented using Python with Streamlit (for GUI) and Plotly (for visualization).
+Each memory management technique is encapsulated in a dedicated class.
+
+=================================================================================
+1️⃣ CLASS: MemorySimulator – Paging with Page Replacement Algorithms
+=================================================================================
+
+📌 Purpose:
+    Simulates memory divided into fixed-size pages.
+    Allocates processes by splitting them into pages and placing them in available memory frames.
+
+📌 Key Attributes:
+    - self.memory: list storing process IDs per page slot.
+    - self.page_faults, self.hits: counters for simulation metrics.
+    - self.fifo_queue, self.lru_tracker, self.lfu_counter: structures for page replacement.
+    - self.internal_fragmentation: memory lost within allocated pages.
+
+📌 Key Methods:
+
+🔹 allocate_process(process_id, size, algorithm, time_step)
+    - Calculates number of pages needed for a process.
+    - Allocates into free memory if available.
+    - If not enough space, performs page replacement based on the algorithm.
+
+🔹 _replace_page(algorithm, process_id, time_step)
+    - FIFO: Replaces the page that was loaded earliest.
+        → old_page = self.fifo_queue.popleft()
+    - LRU: Replaces the least recently accessed page.
+        → oldest = min(self.lru_tracker, key=self.lru_tracker.get)
+    - LFU: Replaces the least frequently used page; uses LRU as tiebreaker on ties.
+        → least_freq = min(self.lfu_counter.values())
+
+🔹 deallocate_process(process_id)
+    - Frees all pages occupied by the process and updates tracking structures.
+
+🔹 get_metrics()
+    - Returns: page_faults, hit_ratio, internal_fragmentation
+
+🔹 plot_memory()
+    - Returns a bar chart showing memory usage by pages and processes.
+
+=================================================================================
+2️⃣ CLASS: SegmentationSimulator – Variable-size Segment Allocation
+=================================================================================
+
+📌 Purpose:
+    Simulates memory allocation by segments (code, data, stack, etc.).
+    Allocates memory using dynamic-sized blocks instead of fixed-size pages.
+
+📌 Key Attributes:
+    - self.memory: memory as a list of addresses, each storing a tuple (process_id, segment_name).
+    - self.segment_table: dictionary mapping process_id → list of segments (name, start, size).
+    - self.free_blocks: list of available blocks in memory.
+    - self.segmentation_faults: tracks allocation failures.
+
+📌 Allocation Strategies:
+
+🔹 First-Fit:
+    - Selects the first block that is large enough.
+    → self._first_fit(size)
+
+🔹 Best-Fit:
+    - Selects the smallest block that can fit the segment.
+    → self._best_fit(size)
+
+🔹 Worst-Fit:
+    - Selects the largest block in memory.
+    → self._worst_fit(size)
+
+📌 Key Methods:
+
+🔹 allocate_segment(process_id, segment_name, segment_size, algorithm)
+    - Finds a block using the chosen strategy and allocates it.
+
+🔹 deallocate_segment(process_id, segment_name=None)
+    - Removes a segment or all segments of a process and merges adjacent free blocks.
+
+🔹 analyze_fragmentation()
+    - Returns metrics like used memory, free memory, external fragmentation, fragmentation index, etc.
+
+🔹 plot_fragmentation()
+    - Visualizes memory usage (pie chart) and distribution of free blocks (bar chart).
+
+🔹 plot_memory()
+    - Returns a stacked bar chart of memory segments and their owners.
+
+=================================================================================
+3️⃣ CLASS: VirtualMemorySimulator – Virtual Memory & Demand Paging
+=================================================================================
+
+📌 Purpose:
+    Models a virtual memory system that supports:
+        - Virtual to physical address translation
+        - Demand paging
+        - Swapping pages in/out from disk (swap space)
+
+📌 Key Attributes:
+    - self.physical_memory: list of physical frames
+    - self.page_table: virtual_page → physical_frame
+    - self.reverse_mapping: physical_frame → virtual_page
+    - self.swap_space: disk-stored pages
+    - self.page_faults, disk_reads, disk_writes: performance metrics
+    - self.lru_tracker, lfu_counter, fifo_queue: for page replacement
+
+📌 Key Methods:
+
+🔹 access_address(virtual_address, process_id, write=False, algorithm)
+    - Translates a virtual address to physical.
+    - If the page is not in memory (page fault), a replacement is triggered.
+    - Updates relevant tracking structures.
+
+🔹 _replace_page(algorithm)
+    - Chooses a physical frame to evict using:
+        FIFO → self.fifo_queue.popleft()
+        LRU  → min(self.lru_tracker.items(), key=lambda x: x[1])[0]
+        LFU  → least accessed page + LRU tie-breaker
+
+🔹 allocate_process(process_id, size)
+    - Pre-allocates virtual pages for the process in the virtual address space.
+
+🔹 get_metrics()
+    - Returns page_faults, disk_reads/writes, physical & swap utilization.
+
+🔹 plot_memory_maps()
+    - Returns bar charts of physical and virtual memory layouts.
+
+📌 Behavior:
+    - If physical memory is full:
+        → A page is swapped out to disk (simulated swap space).
+    - Swapped-in pages are counted as disk reads; evicted pages as disk writes.
+
+=================================================================================
+📌 COMMON VISUALIZATION TOOLS (across all simulators):
+    - plot_memory()      → Memory bar chart (paging/segmentation)
+    - plot_fragmentation() → Pie + bar chart for fragmentation
+    - plot_memory_maps()  → Physical & virtual memory state
+=================================================================================

@@ -1,14 +1,11 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-from process_simulator import ProcessSimulator
-from cpu_scheduler import CPUScheduler
-from memory_simulator import MemorySimulator, SegmentationSimulator
+from memory_simulator import MemorySimulator, SegmentationSimulator, VirtualMemorySimulator
 
 def main():
     st.set_page_config(
-        page_title="OS Simulator",
-        page_icon="🖥️",
+        page_title="Memory Management Simulator",
+        page_icon="🧠",
         layout="wide",
         initial_sidebar_state="expanded"
     )
@@ -39,302 +36,333 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown('<div class="main-header">Operating System Simulator</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Dynamic Memory Management Simulator</div>', unsafe_allow_html=True)
     
-    st.sidebar.header("OS Modules")
-    module = st.sidebar.radio("", ["Dashboard", "Process Management", "CPU Scheduling", "Memory Management"])
+    if 'technique' not in st.session_state:
+        st.session_state.technique = "Paging"
     
-    if 'process_sim' not in st.session_state:
-        st.session_state.process_sim = ProcessSimulator()
-    if 'cpu_scheduler' not in st.session_state:
-        st.session_state.cpu_scheduler = CPUScheduler()
+    st.sidebar.header("Memory Management Technique")
+    technique = st.sidebar.radio("Select Technique", ["Paging", "Segmentation", "Virtual Memory"])
+    st.session_state.technique = technique
     
-    if module == "Dashboard":
-        display_dashboard()
-    elif module == "Process Management":
-        display_process_management()
-    elif module == "CPU Scheduling":
-        display_cpu_scheduling()
-    elif module == "Memory Management":
-        display_memory_management()
+    display_memory_management()
 
-def display_dashboard():
-    st.markdown('<div class="module-header">OS Simulator Dashboard</div>', unsafe_allow_html=True)
+def display_memory_management():
+    st.markdown('<div class="module-header">Memory Management Visualization</div>', unsafe_allow_html=True)
     
-    col1, col2, col3 = st.columns(3)
+    technique = st.session_state.technique
     
-    with col1:
-        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-        st.subheader("👥 Process Management")
-        st.write("Simulate process creation, states, and transitions.")
-        st.markdown("- Process state visualization\n- PCB management\n- Process transitions")
-        if st.button("Go to Process Management"):
-            st.session_state.module = "Process Management"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Common parameters for all techniques
+    total_memory = st.sidebar.number_input("Total Physical Memory (KB)", min_value=100, value=1024, step=100)
+    
+    if technique == "Paging":
+        display_paging_simulation(total_memory)
+    elif technique == "Segmentation":
+        display_segmentation_simulation(total_memory)
+    else:  # Virtual Memory
+        display_virtual_memory_simulation(total_memory)
 
-    with col2:
-        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-        st.subheader("⏱️ CPU Scheduling")
-        st.write("Simulate different CPU scheduling algorithms.")
-        st.markdown("- FCFS, SJF, Round Robin\n- Priority Scheduling\n- Gantt chart visualization")
-        if st.button("Go to CPU Scheduling"):
-            st.session_state.module = "CPU Scheduling"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with col3:
-        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-        st.subheader("🧠 Memory Management")
-        st.write("Simulate memory allocation techniques.")
-        st.markdown("- Paging & Segmentation\n- Page replacement algorithms\n- Virtual memory simulation")
-        if st.button("Go to Memory Management"):
-            st.session_state.module = "Memory Management"
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="module-header">System Overview</div>', unsafe_allow_html=True)
+def display_paging_simulation(total_memory):
+    page_size = st.sidebar.number_input("Page Size (KB)", min_value=1, value=16, step=1)
+    algo = st.sidebar.selectbox("Page Replacement Algorithm", ["FIFO", "LRU", "LFU"])
+    
+    if 'paging_sim' not in st.session_state or st.sidebar.button("Reset Simulator"):
+        st.session_state.paging_sim = MemorySimulator(total_memory, page_size)
+        st.session_state.time_step = 0
+        st.session_state.process_history = []
+    
+    sim = st.session_state.paging_sim
+    
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-        st.subheader("System Stats")
-        stats = {
-            "CPU Usage": "32%",
-            "Memory Usage": "512 MB / 1024 MB",
-            "Processes": f"{len(st.session_state.process_sim.get_processes())} active",
-            "Average Wait Time": "12.5 ms",
-            "Page Faults": "5"
-        }
-        for key, value in stats.items():
-            st.metric(key, value)
-        st.markdown('</div>', unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
-        st.subheader("Resource Usage")
-        fig = px.pie(
-            names=['Used', 'Free'],
-            values=[512, 512],
-            title="Memory Allocation"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-
-def display_process_management():
-    st.markdown('<div class="module-header">Process Management Module</div>', unsafe_allow_html=True)
-    process_sim = st.session_state.process_sim
-    
-    with st.form("process_form"):
-        st.subheader("Process Creation")
-        col1, col2 = st.columns(2)
-        with col1:
-            name = st.text_input("Process Name", f"Process_{process_sim.next_pid}")
-            priority = st.slider("Priority", 1, 10, 5)
-        with col2:
-            memory = st.number_input("Memory Required (MB)", 1, 1000, 64)
-            burst_time = st.number_input("CPU Burst Time (ms)", 1, 1000, 50)
-        submitted = st.form_submit_button("Create Process")
-        
-        if submitted:
-            pid = process_sim.create_process(name, priority, memory, burst_time)
-            st.success(f"Process {name} (PID: {pid}) created!")
-    
-    with st.form("state_form"):
-        st.subheader("Update Process State")
-        processes = process_sim.get_processes()
-        if processes:
-            pid = st.selectbox("Select Process", options=list(processes.keys()))
-            state = st.selectbox("New State", options=['New', 'Ready', 'Running', 'Waiting', 'Terminated'])
-            update = st.form_submit_button("Update State")
+        st.subheader("Allocate Memory")
+        with st.form("paging_allocate_form"):
+            pid = st.text_input("Process ID", f"P{len(st.session_state.process_history) + 1}")
+            size = st.number_input("Size (KB)", min_value=1, value=32)
+            allocate = st.form_submit_button("Allocate Memory")
             
-            if update:
-                if state == 'Terminated':
-                    process_sim.terminate_process(pid)
-                    st.success(f"Process {pid} terminated!")
-                else:
-                    process_sim.update_state(pid, state)
-                    st.success(f"Process {pid} state updated to {state}!")
-    
-    processes = process_sim.get_processes()
-    if processes:
-        st.subheader("Active Processes")
-        df = pd.DataFrame.from_dict(processes, orient='index')
-        st.dataframe(df, use_container_width=True)
-    
-    history = process_sim.get_history()
-    if history:
-        st.subheader("Process History")
-        df_history = pd.DataFrame(history)
-        st.dataframe(df_history, use_container_width=True)
-
-def display_cpu_scheduling():
-    st.markdown('<div class="module-header">CPU Scheduling Module</div>', unsafe_allow_html=True)
-    scheduler = st.session_state.cpu_scheduler
-    
-    with st.form("add_process_form"):
-        st.subheader("Add Process")
-        pid = st.number_input("Process ID", min_value=1, step=1)
-        burst_time = st.number_input("Burst Time (ms)", min_value=1, value=50)
-        priority = st.number_input("Priority", min_value=0, value=0)
-        add = st.form_submit_button("Add Process")
-        
-        if add:
-            scheduler.add_process(pid, burst_time, priority)
-            st.success(f"Process {pid} added!")
-    
-    st.subheader("Run Scheduling Algorithm")
-    algo = st.selectbox("Algorithm", ["FCFS", "SJF", "Round Robin"])
-    quantum = None
-    if algo == "Round Robin":
-        quantum = st.number_input("Time Quantum", min_value=1, value=10)
-    
-    if st.button("Run Simulation"):
-        if algo == "FCFS":
-            metrics = scheduler.fcfs()
-        elif algo == "SJF":
-            metrics = scheduler.sjf()
-        else:
-            metrics = scheduler.round_robin(quantum)
-        
-        st.subheader("Gantt Chart")
-        st.plotly_chart(scheduler.plot_gantt(), use_container_width=True)
-        
-        st.subheader("Performance Metrics")
-        df_metrics = pd.DataFrame(metrics)
-        st.dataframe(df_metrics, use_container_width=True)
-
-def display_memory_management():
-    st.markdown('<div class="module-header">Memory Management Module</div>', unsafe_allow_html=True)
-    
-    technique = st.sidebar.selectbox("Technique", ["Paging", "Segmentation"])
-    total_memory = st.sidebar.number_input("Total Memory (KB)", min_value=100, value=1024, step=100)
-    
-    if technique == "Paging":
-        page_size = st.sidebar.number_input("Page Size (KB)", min_value=1, value=16, step=1)
-        algo = st.sidebar.selectbox("Replacement Algorithm", ["FIFO", "LRU", "LFU"])
-        
-        if 'paging_sim' not in st.session_state or st.sidebar.button("Reset Simulator"):
-            st.session_state.paging_sim = MemorySimulator(total_memory, page_size)
-            st.session_state.time_step = 0
-            st.session_state.process_history = []
-        
-        sim = st.session_state.paging_sim
-        with st.form("paging_form"):
-            st.subheader("Process Management")
-            col1, col2 = st.columns(2)
-            with col1:
-                pid = st.text_input("Process ID", f"P{len(st.session_state.process_history) + 1}")
-                size = st.number_input("Size (KB)", min_value=1, value=32)
-                add = st.form_submit_button("Add Process")
-            with col2:
-                active = [p['id'] for p in st.session_state.process_history if p['active']]
-                if active:
-                    remove_pid = st.selectbox("Remove Process", options=active)
-                    remove = st.form_submit_button("Remove Process")
-                else:
-                    remove = False
-            
-            if add:
+            if allocate:
                 success = sim.allocate_process(pid, size, algo, st.session_state.time_step)
                 st.session_state.process_history.append({
                     'id': pid, 'size': size, 'time_added': st.session_state.time_step, 'active': True
                 })
                 st.session_state.time_step += 1
                 if success:
-                    st.success(f"Process {pid} allocated!")
+                    st.success(f"Process {pid} allocated successfully!")
                 else:
-                    st.error(f"Failed to allocate process {pid}")
-            
-            if remove and active:
-                for p in st.session_state.process_history:
-                    if p['id'] == remove_pid:
-                        p['active'] = False
-                sim.deallocate_process(remove_pid)
-                st.session_state.time_step += 1
-                st.success(f"Process {remove_pid} removed!")
-        
-        memory, page_faults = sim.get_state()
-        st.subheader("Memory Map")
-        st.plotly_chart(sim.plot_memory(), use_container_width=True)
-        
-        st.subheader("Page Table")
-        active_processes = [p['id'] for p in st.session_state.process_history if p['active']]
-        if active_processes:
-            page_data = {pid: [i for i, x in enumerate(memory) if x == pid] for pid in active_processes}
-            max_pages = max([len(pages) for pages in page_data.values()], default=0)
-            for pid in page_data:
-                page_data[pid] = page_data[pid] + [None] * (max_pages - len(page_data[pid]))
-            df_pages = pd.DataFrame(page_data)
-            st.dataframe(df_pages, use_container_width=True)
-        
-        st.subheader("Metrics")
-        metrics = sim.get_metrics()
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Page Faults", metrics["page_faults"])
-        with col2:
-            st.metric("Hit Ratio", f"{metrics['hit_ratio']:.2%}")
-        with col3:
-            st.metric("Internal Fragmentation", f"{metrics['internal_fragmentation']} KB")
+                    st.error(f"Failed to allocate process {pid}. Not enough memory!")
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    else:  # Segmentation
-        if 'seg_sim' not in st.session_state or st.sidebar.button("Reset Simulator"):
-            st.session_state.seg_sim = SegmentationSimulator(total_memory)
-            st.session_state.seg_processes = {}
-        
-        sim = st.session_state.seg_sim
-        algo = st.sidebar.selectbox("Allocation Algorithm", ["First-Fit", "Best-Fit", "Worst-Fit"])
-        
-        with st.form("segment_form"):
-            st.subheader("Segment Management")
-            col1, col2 = st.columns(2)
-            with col1:
-                pid = st.text_input("Process ID", "P1")
-                seg_name = st.text_input("Segment Name", "code")
-                size = st.number_input("Size (KB)", min_value=1, value=64)
-                add = st.form_submit_button("Add Segment")
-            with col2:
-                if sim.segment_table:
-                    processes = list(sim.segment_table.keys())
-                    remove_pid = st.selectbox("Remove Process", options=processes)
-                    remove = st.form_submit_button("Remove Process")
-                else:
-                    remove = False
+    with col2:
+        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
+        st.subheader("Deallocate Memory")
+        with st.form("paging_deallocate_form"):
+            # Get active processes
+            active = [p['id'] for p in st.session_state.process_history if p['active']]
+            if active:
+                remove_pid = st.selectbox("Select Process to Remove", options=active)
+                deallocate = st.form_submit_button("Deallocate Memory")
+                
+                if deallocate:
+                    for p in st.session_state.process_history:
+                        if p['id'] == remove_pid:
+                            p['active'] = False
+                    sim.deallocate_process(remove_pid)
+                    st.session_state.time_step += 1
+                    st.success(f"Process {remove_pid} removed from memory!")
+            else:
+                st.write("No active processes to deallocate.")
+                st.form_submit_button("Deallocate Memory", disabled=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Memory Map Visualization
+    st.subheader("Memory Map Visualization")
+    memory_fig = sim.plot_memory()
+    st.plotly_chart(memory_fig, use_container_width=True)
+    
+    # Page Table
+    st.subheader("Page Table")
+    memory, page_faults = sim.get_state()
+    active_processes = [p['id'] for p in st.session_state.process_history if p['active']]
+    if active_processes:
+        page_data = {pid: [i for i, x in enumerate(memory) if x == pid] for pid in active_processes}
+        max_pages = max([len(pages) for pages in page_data.values()], default=0)
+        for pid in page_data:
+            page_data[pid] = page_data[pid] + [None] * (max_pages - len(page_data[pid]))
+        df_pages = pd.DataFrame(page_data)
+        st.dataframe(df_pages, use_container_width=True)
+    else:
+        st.info("No active processes in memory.")
+    
+    # Performance Metrics
+    st.subheader("Memory Performance Metrics")
+    metrics = sim.get_metrics()
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Page Faults", metrics["page_faults"])
+    with col2:
+        st.metric("Hit Ratio", f"{metrics['hit_ratio']:.2%}")
+    with col3:
+        st.metric("Internal Fragmentation", f"{metrics['internal_fragmentation']} KB")
+
+def display_segmentation_simulation(total_memory):
+    algo = st.sidebar.selectbox("Allocation Algorithm", ["First-Fit", "Best-Fit", "Worst-Fit"])
+    
+    if 'seg_sim' not in st.session_state or st.sidebar.button("Reset Simulator"):
+        st.session_state.seg_sim = SegmentationSimulator(total_memory)
+        st.session_state.seg_processes = {}
+    
+    sim = st.session_state.seg_sim
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
+        st.subheader("Allocate Segment")
+        with st.form("segment_allocate_form"):
+            pid = st.text_input("Process ID", "P1")
+            seg_name = st.text_input("Segment Name", "code")
+            size = st.number_input("Size (KB)", min_value=1, value=64)
+            allocate = st.form_submit_button("Allocate Segment")
             
-            if add:
+            if allocate:
                 success, addr = sim.allocate_segment(pid, seg_name, size, algo)
                 if success:
-                    st.success(f"Segment '{seg_name}' allocated at {addr}")
+                    st.success(f"Segment '{seg_name}' allocated at address {addr}")
                     if pid not in st.session_state.seg_processes:
                         st.session_state.seg_processes[pid] = []
                     st.session_state.seg_processes[pid].append({'name': seg_name, 'size': size, 'address': addr})
                 else:
-                    st.error(f"Failed to allocate segment '{seg_name}'")
+                    st.error(f"Failed to allocate segment '{seg_name}'. Not enough contiguous memory!")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
+        st.subheader("Deallocate Segment")
+        with st.form("segment_deallocate_form"):
+            if sim.segment_table:
+                deallocate_option = st.radio("Deallocate option", ["Process", "Single Segment"])
+                
+                if deallocate_option == "Process":
+                    processes = list(sim.segment_table.keys())
+                    remove_pid = st.selectbox("Select Process to Remove", options=processes)
+                    deallocate = st.form_submit_button("Deallocate Process")
+                    
+                    if deallocate:
+                        sim.deallocate_segment(remove_pid)
+                        if remove_pid in st.session_state.seg_processes:
+                            del st.session_state.seg_processes[remove_pid]
+                        st.success(f"Process {remove_pid} removed from memory!")
+                else:
+                    # Get all processes and their segments
+                    all_segments = []
+                    for pid in sim.segment_table:
+                        for seg_name, _, _ in sim.segment_table[pid]:
+                            all_segments.append((pid, seg_name))
+                    
+                    if all_segments:
+                        segment_labels = [f"{pid}:{seg}" for pid, seg in all_segments]
+                        selection = st.selectbox("Select Segment to Remove", options=segment_labels)
+                        pid, seg_name = selection.split(":")
+                        
+                        deallocate = st.form_submit_button("Deallocate Segment")
+                        
+                        if deallocate:
+                            sim.deallocate_segment(pid, seg_name)
+                            st.success(f"Segment {seg_name} of process {pid} removed from memory!")
+                    else:
+                        st.write("No segments to deallocate.")
+                        st.form_submit_button("Deallocate Segment", disabled=True)
+            else:
+                st.write("No active segments to deallocate.")
+                st.form_submit_button("Deallocate", disabled=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Memory Map Visualization
+    st.subheader("Memory Map Visualization")
+    memory_fig = sim.plot_memory()
+    st.plotly_chart(memory_fig, use_container_width=True)
+    
+    # Fragmentation Analysis
+    st.subheader("Fragmentation Analysis")
+    frag_fig, block_fig = sim.plot_fragmentation()
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.plotly_chart(frag_fig, use_container_width=True)
+    with col2:
+        if block_fig:
+            st.plotly_chart(block_fig, use_container_width=True)
+    
+    # Segment Table
+    st.subheader("Segment Table")
+    _, segment_table, seg_faults = sim.get_state()
+    if segment_table:
+        segments_data = []
+        for pid, segments in segment_table.items():
+            for name, start, size in segments:
+                segments_data.append({
+                    'Process': pid,
+                    'Segment': name,
+                    'Base Address': start,
+                    'Size': size,
+                    'End Address': start + size - 1
+                })
+        st.dataframe(pd.DataFrame(segments_data), use_container_width=True)
+        st.metric("Segmentation Faults", seg_faults)
+    else:
+        st.info("No segments allocated in memory.")
+
+def display_virtual_memory_simulation(physical_memory):
+    virtual_memory = st.sidebar.number_input("Total Virtual Memory (KB)", min_value=physical_memory, value=4096, step=512)
+    page_size = st.sidebar.number_input("Page Size (KB)", min_value=1, value=16, step=1)
+    algo = st.sidebar.selectbox("Page Replacement Algorithm", ["FIFO", "LRU", "LFU"])
+    
+    if 'vm_sim' not in st.session_state or st.sidebar.button("Reset Simulator"):
+        st.session_state.vm_sim = VirtualMemorySimulator(physical_memory, virtual_memory, page_size)
+        st.session_state.vm_processes = {}
+        st.session_state.access_history = []
+    
+    sim = st.session_state.vm_sim
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
+        st.subheader("Allocate Virtual Memory")
+        with st.form("vm_allocate_form"):
+            pid = st.text_input("Process ID", "P1")
+            size = st.number_input("Size (KB)", min_value=1, value=128)
+            allocate = st.form_submit_button("Allocate Memory")
             
-            if remove and sim.segment_table:
-                sim.deallocate_segment(remove_pid)
-                if remove_pid in st.session_state.seg_processes:
-                    del st.session_state.seg_processes[remove_pid]
-                st.success(f"Process {remove_pid} removed!")
-        
-        st.subheader("Memory Map")
-        st.plotly_chart(sim.plot_memory(), use_container_width=True)
-        
-        st.subheader("Segment Table")
-        memory, segment_table, seg_faults = sim.get_state()
-        if segment_table:
-            segments_data = []
-            for pid, segments in segment_table.items():
-                for name, start, size in segments:
-                    segments_data.append({
-                        'Process': pid,
-                        'Segment': name,
-                        'Base Address': start,
-                        'Size': size
-                    })
-            st.dataframe(pd.DataFrame(segments_data), use_container_width=True)
-            st.metric("Segmentation Faults", seg_faults)
+            if allocate:
+                success, result = sim.allocate_process(pid, size)
+                if success:
+                    st.session_state.vm_processes[pid] = {'size': size, 'pages': result}
+                    st.success(f"Allocated {size} KB of virtual memory for process {pid}")
+                else:
+                    st.error(f"Failed to allocate memory: {result}")
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown('<div class="feature-box">', unsafe_allow_html=True)
+        st.subheader("Memory Access Simulation")
+        with st.form("memory_access_form"):
+            if st.session_state.vm_processes:
+                process_options = list(st.session_state.vm_processes.keys())
+                access_pid = st.selectbox("Select Process", options=process_options)
+                
+                if access_pid in st.session_state.vm_processes:
+                    process_size = st.session_state.vm_processes[access_pid]['size']
+                    max_address = process_size * 1024  # Convert KB to bytes
+                    
+                    virtual_address = st.number_input(
+                        "Virtual Address to Access (bytes)", 
+                        min_value=0, 
+                        max_value=max_address-1, 
+                        value=0
+                    )
+                    
+                    is_write = st.checkbox("Write Operation", value=False)
+                    access = st.form_submit_button("Access Memory")
+                    
+                    if access:
+                        success, physical_addr, page_fault = sim.access_address(
+                            virtual_address, access_pid, is_write, algo
+                        )
+                        
+                        st.session_state.access_history.append({
+                            'process': access_pid,
+                            'virtual_addr': virtual_address,
+                            'physical_addr': physical_addr if success else None,
+                            'page_fault': page_fault,
+                            'operation': 'Write' if is_write else 'Read'
+                        })
+                        
+                        if success:
+                            fault_text = " (Page Fault)" if page_fault else " (Page Hit)"
+                            st.success(f"Memory access successful. Mapped to physical address {physical_addr}{fault_text}")
+                        else:
+                            st.error("Memory access failed!")
+            else:
+                st.write("No processes allocated. Please allocate memory first.")
+                st.form_submit_button("Access Memory", disabled=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Memory Visualization
+    st.subheader("Memory Visualization")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("#### Physical Memory")
+    with col2:
+        st.markdown("#### Virtual Memory")
+    
+    # Get memory visualizations
+    phys_fig, virt_fig = sim.plot_memory_maps()
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(phys_fig, use_container_width=True)
+    with col2:
+        st.plotly_chart(virt_fig, use_container_width=True)
+    
+    # Access History
+    if st.session_state.access_history:
+        st.subheader("Memory Access History")
+        df_access = pd.DataFrame(st.session_state.access_history)
+        st.dataframe(df_access, use_container_width=True)
+    
+    # Performance Metrics
+    st.subheader("Performance Metrics")
+    metrics = sim.get_metrics()
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Page Faults", metrics["page_faults"])
+    with col2:
+        st.metric("Disk Reads", metrics["disk_reads"])
+    with col3:
+        st.metric("Disk Writes", metrics["disk_writes"])
 
 if __name__ == "__main__":
     main()
