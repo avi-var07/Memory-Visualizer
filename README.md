@@ -4,6 +4,10 @@
 ![Python](https://img.shields.io/badge/Python-3.7+-blue.svg)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.29.0-red.svg)
 
+## 🌐 Deployment
+
+Try the live demo: [Memory Management Simulator](https://dynamic-memory-visualizer-by-aviral-varshney.streamlit.app/)
+
 A comprehensive educational tool for visualizing and understanding memory management techniques in operating systems, including paging, segmentation, and virtual memory.
 
 ## 📸 Project Screenshots
@@ -11,13 +15,13 @@ A comprehensive educational tool for visualizing and understanding memory manage
 <details>
 <summary>See Images</summary>
 
-![Screenshot 1](https://github.com/user-attachments/assets/798c93b7-a15a-4e81-9318-dc83369a73ab)
-![Screenshot 2 - Paging](https://github.com/user-attachments/assets/0c5d8e9b-6b1e-4e14-b5b3-5e6e9c7b8f0e)
-![Screenshot 3 - Virtual Memory](https://github.com/user-attachments/assets/3f8b7c2a-5f9f-4b2d-8e1d-8a8f6c9d0e1f)
-![Screenshot 4 - Segmentation Allocation](https://github.com/user-attachments/assets/6e2d9f3b-7c0f-4e24-9e2d-9b9f7d0e1f2g)
-![Screenshot 5 - Segmentation with Fragmentation](https://github.com/user-attachments/assets/9f3e0g4c-8d1g-4f34-ae3e-ac0g8e1f2g3h)
-![Screenshot 6 - Virtual Memory Allocation](https://github.com/user-attachments/assets/cg4h1i5d-9e2h-4g45-bf4f-bd1h9f2g3i4i)
-![Screenshot 7 - Paging Allocation](https://github.com/user-attachments/assets/i5j2k6e-fg3i-4h56-cg5g-ce2i0g3h4j5j)
+![Screenshot 1](https://raw.githubusercontent.com/avi-var07/Memory-Visualizer/main/memory_visualizer_project/images/screenshot-1.png)
+![Screenshot 2 - Paging](https://raw.githubusercontent.com/avi-var07/Memory-Visualizer/main/memory_visualizer_project/images/screenshot-2.png)
+![Screenshot 3 - Virtual Memory](https://raw.githubusercontent.com/avi-var07/Memory-Visualizer/main/memory_visualizer_project/images/screenshot-3.png)
+![Screenshot 4 - Segmentation Allocation](https://raw.githubusercontent.com/avi-var07/Memory-Visualizer/main/memory_visualizer_project/images/screenshot-4.png)
+![Screenshot 5 - Segmentation with Fragmentation](https://raw.githubusercontent.com/avi-var07/Memory-Visualizer/main/memory_visualizer_project/images/screenshot-5.png)
+![Screenshot 6 - Virtual Memory Allocation](https://raw.githubusercontent.com/avi-var07/Memory-Visualizer/main/memory_visualizer_project/images/screenshot-6.png)
+![Screenshot 7 - Paging Allocation](https://raw.githubusercontent.com/avi-var07/Memory-Visualizer/main/memory_visualizer_project/images/screenshot-7.png)
 
 </details>
 
